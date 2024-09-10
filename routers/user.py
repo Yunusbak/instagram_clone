@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import APIRouter, HTTPException, Depends, status
 from fastapi.encoders import jsonable_encoder
 from fastapi_jwt_auth import AuthJWT
@@ -16,7 +18,7 @@ user_router = APIRouter(prefix="/users", tags=["users"])
 @user_router.get('/')
 async def get_users(Authorize: AuthJWT = Depends()):
     try:
-        Authorize.jwt_required()
+        # Authorize.jwt_required()
         users = Session.query(User).all()
         if users:
             data = {
@@ -65,6 +67,25 @@ async def get_user(Authorize: AuthJWT = Depends()):
         return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
 
+@user_router.get('/user/{id}')
+async def get_user(id: uuid.UUID):
+    try:
+
+        user = Session.query(User).filter(User.id == id).first()
+        data = {
+            "status": 200,
+            "message": f'the user {user.username}',
+            "detail" : {
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "username": user.username,
+                "email": user.email,
+                "created_at": user.created_at,
+            }
+        }
+        return jsonable_encoder(data)
+    except Exception as e:
+        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 @user_router.put('/update-user')
 async def update_user(user : UserUpdate, Authorize: AuthJWT = Depends()):
     try:
